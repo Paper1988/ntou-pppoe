@@ -128,7 +128,12 @@ def test_connect_command_prints_error_on_failure():
     ):
         run_command("connect")
 
-    print_mock.assert_any_call()
+    print_mock.assert_any_call(
+        "❌ PPPoE connection failed",
+    )
+    print_mock.assert_any_call(
+        "Error code: 628",
+    )
     print_mock.assert_any_call(
         "RasDialW failed with error 628.",
     )
@@ -190,7 +195,12 @@ def test_disconnect_command_prints_error_on_failure():
     ):
         run_command("disconnect")
 
-    print_mock.assert_any_call()
+    print_mock.assert_any_call(
+        "❌ PPPoE disconnection failed",
+    )
+    print_mock.assert_any_call(
+        "Error code: 6",
+    )
     print_mock.assert_any_call(
         "RasHangUpW failed with error 6.",
     )
@@ -379,3 +389,42 @@ def test_run_command_returns_zero_for_diagnose():
         result = run_command("diagnose")
 
     assert result == 0
+
+
+def test_status_command_prints_failed_health_checks():
+    """status should print the checks that failed."""
+
+    manager = create_manager()
+
+    manager.health_check.return_value = NetworkHealthResult(
+        pppoe_ok=True,
+        ipv4_ok=True,
+        gateway_ok=False,
+        dns_ok=True,
+        https_ok=False,
+    )
+
+    manager.get_diagnostics.return_value = diagnostics_result()
+
+    with (
+        patch(
+            "ntou_pppoe.cli.ConnectionManager",
+            return_value=manager,
+        ),
+        patch(
+            "ntou_pppoe.cli.Dashboard",
+        ),
+        patch(
+            "builtins.print",
+        ) as print_mock,
+    ):
+        result = run_command("status")
+
+    assert result == 1
+
+    print_mock.assert_any_call(
+        "⚠ Network health check failed",
+    )
+    print_mock.assert_any_call(
+        "Failed checks: Gateway, HTTPS",
+    )

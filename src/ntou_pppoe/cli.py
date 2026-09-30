@@ -4,6 +4,7 @@ import argparse
 
 from ntou_pppoe.core.manager import ConnectionManager
 from ntou_pppoe.core.service import ConnectionService
+from ntou_pppoe.network.connectivity import NetworkHealthResult
 from ntou_pppoe.ui.dashboard import Dashboard
 
 
@@ -30,6 +31,47 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _print_error(
+    operation: str,
+    output: str,
+    return_code: int,
+) -> None:
+    """Print a consistent CLI error message."""
+
+    print()
+    print(f"❌ {operation} failed")
+    print()
+
+    if return_code > 0:
+        print(f"Error code: {return_code}")
+
+    if output:
+        print(output)
+
+
+def _print_health_failure(
+    health: NetworkHealthResult,
+) -> None:
+    """Print the checks that failed during a health check."""
+
+    checks = [
+        ("PPPoE", health.pppoe_ok),
+        ("IPv4", health.ipv4_ok),
+        ("Gateway", health.gateway_ok),
+        ("DNS", health.dns_ok),
+        ("HTTPS", health.https_ok),
+    ]
+
+    failed_checks = [name for name, passed in checks if not passed]
+
+    if not failed_checks:
+        return
+
+    print()
+    print("⚠ Network health check failed")
+    print("Failed checks: " + ", ".join(failed_checks))
+
+
 def run_command(command: str) -> int:
     """Execute a CLI command and return its exit code."""
 
@@ -51,8 +93,11 @@ def run_command(command: str) -> int:
                 retry_attempt=manager.retry.attempt,
             )
 
-            print()
-            print(result.output)
+            _print_error(
+                "PPPoE connection",
+                result.output,
+                result.return_code,
+            )
 
             return result.return_code or 1
 
@@ -67,6 +112,9 @@ def run_command(command: str) -> int:
             retry_attempt=manager.retry.attempt,
         )
 
+        if not health.healthy:
+            _print_health_failure(health)
+
         return 0 if health.healthy else 1
 
     if command == "disconnect":
@@ -79,8 +127,12 @@ def run_command(command: str) -> int:
         )
 
         if not result.success:
-            print()
-            print(result.output)
+            _print_error(
+                "PPPoE disconnection",
+                result.output,
+                result.return_code,
+            )
+
             return result.return_code or 1
 
         return 0
@@ -96,6 +148,9 @@ def run_command(command: str) -> int:
             diagnostics=diagnostics,
             retry_attempt=manager.retry.attempt,
         )
+
+        if not health.healthy:
+            _print_health_failure(health)
 
         return 0 if health.healthy else 1
 
