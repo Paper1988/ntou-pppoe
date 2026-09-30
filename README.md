@@ -282,7 +282,7 @@ NTOU-PPPoE
 Clone repository：
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/Paper1988/ntou-pppoe
 cd ntou-pppoe
 ```
 
