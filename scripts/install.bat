@@ -37,7 +37,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-for /f "delims=" %%P in ('where python') do (
+for /f "delims=" %%P in ('python -c "import sys; print(sys.executable)"') do (
     set "PYTHON_PATH=%%P"
     goto :python_found
 )
