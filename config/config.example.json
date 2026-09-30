@@ -1,0 +1,17 @@
+{
+    "connection_name": "YOUR_PPPOE_CONNECTION_NAME",
+    "startup_delay": 5,
+    "check_interval": 30,
+    "connect_timeout": 30,
+    "health_check": {
+        "enabled": true,
+        "dns_host": "example.com",
+        "https_url": "https://www.example.com",
+        "timeout": 5
+    },
+    "retry": {
+        "initial_delay": 5,
+        "max_delay": 60,
+        "max_attempts": 5
+    }
+}

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ntou-pppoe"
+version = "0.1.0"
+description = "A reliable Windows PPPoE connection manager for NTOU dormitory networks."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Paper" }
+]
+
+[project.scripts]
+ntou-pppoe = "ntou_pppoe.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
