@@ -425,7 +425,7 @@ Your profile name may be different.
 ## 2. Clone the Repository
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/Paper1988/ntou-pppoe
 cd ntou-pppoe
 ```
 
