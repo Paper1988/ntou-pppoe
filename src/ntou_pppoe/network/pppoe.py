@@ -14,6 +14,8 @@ RAS_MAX_DEVICE_NAME = 128
 UNLEN = 256
 PWLEN = 256
 DNLEN = 15
+RASCS_DISCONNECTED = 0
+RASCS_Connected = 8192
 
 
 class GUID(ctypes.Structure):
@@ -247,6 +249,44 @@ class PPPoEManager:
             self._connection_handle = None
             return False
 
+    def _get_connect_status(
+        self,
+        connection_handle: ctypes.c_void_p,
+    ) -> int | None:
+        """Return the current RAS connection state."""
+
+        function = self._rasapi32.RasGetConnectStatusW
+
+        function.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+
+        function.restype = wintypes.DWORD
+
+        class RASCONNSTATUSW(ctypes.Structure):
+            _fields_ = [
+                ("dwSize", wintypes.DWORD),
+                ("rasconnstate", wintypes.DWORD),
+                ("dwError", wintypes.DWORD),
+                ("szDeviceType", wintypes.WCHAR * (RAS_MAX_DEVICE_TYPE + 1)),
+                ("szDeviceName", wintypes.WCHAR * (RAS_MAX_DEVICE_NAME + 1)),
+                ("szPhoneNumber", wintypes.WCHAR * (RAS_MAX_PHONE_NUMBER + 1)),
+            ]
+
+        status = RASCONNSTATUSW()
+        status.dwSize = ctypes.sizeof(RASCONNSTATUSW)
+
+        result = function(
+            connection_handle,
+            ctypes.byref(status),
+        )
+
+        if result != 0:
+            return None
+
+        return status.rasconnstate
+
     def _wait_for_connect(self) -> bool:
         """Wait until the PPPoE connection becomes active."""
 
@@ -261,17 +301,37 @@ class PPPoEManager:
         return self.is_connected()
 
     def _wait_for_disconnect(self) -> bool:
-        """Wait until the PPPoE connection disappears."""
+        """Wait until the PPPoE connection is fully released."""
 
         deadline = time.monotonic() + self.timeout
 
         while time.monotonic() < deadline:
-            if not self.is_connected():
-                return True
+            connection = self._find_connection()
+
+            if connection is None:
+                # RAS has removed the connection from its active list.
+                # Give RasMan a short settling period before another dial.
+                time.sleep(0.5)
+
+                return self._find_connection() is None
+
+            status = self._get_connect_status(
+                connection.hrasconn,
+            )
+
+            if status is None:
+                time.sleep(0.25)
+                continue
+
+            if status == RASCS_DISCONNECTED:
+                time.sleep(0.5)
+
+                if self._find_connection() is None:
+                    return True
 
             time.sleep(0.25)
 
-        return not self.is_connected()
+        return self._find_connection() is None
 
     def _get_pbk_path(self) -> Path:
         """Return the current user's RAS phonebook path."""
@@ -351,6 +411,31 @@ class PPPoEManager:
             None,
             ctypes.byref(connection_handle),
         )
+
+        if result == 756:
+            for _ in range(3):
+                time.sleep(0.5)
+
+                if self.is_connected():
+                    self._connection_handle = connection_handle
+
+                    return RasdialResult(
+                        success=True,
+                        output="PPPoE connection established.",
+                        return_code=0,
+                    )
+
+                result = function(
+                    None,
+                    None,
+                    ctypes.byref(params),
+                    0,
+                    None,
+                    ctypes.byref(connection_handle),
+                )
+
+                if result != 756:
+                    break
 
         if result != 0:
             return RasdialResult(
