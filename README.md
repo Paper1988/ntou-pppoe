@@ -6,6 +6,11 @@ NTOU PPPoE 使用 Windows 內建的 Remote Access Service（RAS）管理 PPPoE �
 
 > 💡 本專案主要提供給海大宿舍使用者使用，也歡迎其他需要 Windows PPPoE 自動管理功能的人使用。
 
+![CI](https://github.com/Paper1988/ntou-pppoe/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/github/license/Paper1988/ntou-pppoe)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![Release](https://img.shields.io/github/v/release/Paper1988/ntou-pppoe)
+
 ---
 
 ## ✨ 功能
@@ -1263,6 +1268,23 @@ python -m ntou_pppoe connect
 
 查看實際錯誤訊息。
 
+## 第一次執行說「找不到設定檔」怎麼辦？
+
+這是正常的。第一次執行時,如果還沒有 `config/config.json`,程式會自動幫你建立一份範本,並顯示類似訊息:
+
+```
+找不到設定檔,已自動建立範本:...\config\config.json
+請打開它,把 connection_name 改成你的 Windows PPPoE 連線名稱後,再執行一次。
+```
+
+你只要：
+
+1. 打開剛剛建立的 `config/config.json`
+2. 把 `connection_name` 改成你 Windows 裡實際的 PPPoE 連線名稱
+3. 再執行一次即可
+
+如果你是用打包好的 `ntou-pppoe.exe`,設定檔會建立在 **exe 旁邊的 `config/` 資料夾**。
+
 ## 為什麼 `status` 顯示 PPPoE 正常，但 Health 不是 5/5？
 
 代表 PPPoE connection 仍存在，但其他網路層級可能發生問題。
@@ -1358,6 +1380,23 @@ python -m ntou_pppoe connect
 ```
 
 to see the connection result and any reported error.
+
+## What should I do if it says the configuration file is not found on first run?
+
+This is expected. On the first run, if `config/config.json` does not yet exist, the application automatically creates a template and shows a message like:
+
+```
+Configuration file not found. A template has been created at: ...\config\config.json
+Please open it, set connection_name to your Windows PPPoE connection name, and run again.
+```
+
+Just:
+
+1. Open the newly created `config/config.json`
+2. Change `connection_name` to the actual name of your Windows PPPoE connection
+3. Run the application again
+
+If you are using the packaged `ntou-pppoe.exe`, the config file is created in the `config/` folder next to the executable.
 
 ## Why does `status` show PPPoE as connected but Health is not 5/5?
 

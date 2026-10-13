@@ -12,9 +12,13 @@ license = { text = "MIT" }
 authors = [
     { name = "Paper" }
 ]
+dependencies = ["rich>=13.0"]
 
 [project.scripts]
 ntou-pppoe = "ntou_pppoe.__main__:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0", "ruff", "pyinstaller"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
