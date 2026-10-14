@@ -167,7 +167,7 @@ class PPPoEManager:
                 output=f"Failed to load RAS API: {exc}",
                 return_code=-2,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - 背景服務最後防線,不可因未預期錯誤崩潰
             return RasdialResult(
                 success=False,
                 output=f"Unexpected RAS error: {exc}",
@@ -225,7 +225,7 @@ class PPPoEManager:
                 output=(f"Failed to access RAS API: {exc}"),
                 return_code=-1,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - 背景服務最後防線,不可因未預期錯誤崩潰
             return RasdialResult(
                 success=False,
                 output=f"Unexpected RAS error: {exc}",

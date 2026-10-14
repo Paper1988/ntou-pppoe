@@ -93,8 +93,6 @@ def test_ipv4_address_returns_none_on_socket_error():
 def test_default_gateway_is_parsed_from_route_output():
     """Gateway detection should parse the default route."""
 
-    collector = create_collector()
-
     route_output = """
 ===========================================================================
 Interface List
