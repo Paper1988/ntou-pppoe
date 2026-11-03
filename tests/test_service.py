@@ -207,8 +207,8 @@ def test_run_cycle_checks_health_when_connected():
     manager.recover.assert_not_called()
 
 
-def test_run_cycle_recovers_when_health_check_fails():
-    """A failed health check should trigger recovery."""
+def test_run_cycle_does_not_recover_when_only_internet_probe_fails():
+    """A failed Internet probe must not tear down a healthy PPPoE session."""
 
     service, manager = create_service()
 
@@ -224,8 +224,8 @@ def test_run_cycle_recovers_when_health_check_fails():
 
     service._run_cycle()
 
-    assert manager.health_check.call_count == 2
-    manager.recover.assert_called_once()
+    manager.health_check.assert_called_once()
+    manager.recover.assert_not_called()
 
 
 def test_run_cycle_recovers_from_error_state():
