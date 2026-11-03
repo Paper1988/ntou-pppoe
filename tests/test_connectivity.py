@@ -261,3 +261,40 @@ def test_network_health_result_is_unhealthy_when_https_fails():
     )
 
     assert result.healthy is False
+
+
+def test_network_health_requires_recovery_when_pppoe_is_unavailable():
+    """A missing PPPoE session should require recovery."""
+
+    result = NetworkHealthResult(
+        pppoe_ok=False,
+        ipv4_ok=True,
+        gateway_ok=True,
+        dns_ok=True,
+        https_ok=True,
+    )
+
+    assert result.requires_recovery is True
+
+
+def test_network_health_does_not_require_recovery_for_dns_or_https_failure():
+    """Internet probe failures alone should not require a PPPoE reconnect."""
+
+    for result in (
+        NetworkHealthResult(
+            pppoe_ok=True,
+            ipv4_ok=True,
+            gateway_ok=True,
+            dns_ok=False,
+            https_ok=False,
+        ),
+        NetworkHealthResult(
+            pppoe_ok=True,
+            ipv4_ok=True,
+            gateway_ok=True,
+            dns_ok=True,
+            https_ok=False,
+        ),
+    ):
+        assert result.healthy is False
+        assert result.requires_recovery is False
