@@ -161,24 +161,33 @@ class ConnectionManager:
             https_ok=connectivity.https_ok,
         )
 
-        if result.healthy:
+        if result.session_healthy:
             self.state = ConnectionState.CONNECTED
             self.retry.reset()
 
-            self.logger.info(
-                "Network health check passed. "
-                "PPPoE=%s IPv4=%s Gateway=%s DNS=%s HTTPS=%s",
-                result.pppoe_ok,
-                result.ipv4_ok,
-                result.gateway_ok,
-                result.dns_ok,
-                result.https_ok,
-            )
+            if result.healthy:
+                self.logger.info(
+                    "Network health check passed. "
+                    "PPPoE=%s IPv4=%s Gateway=%s DNS=%s HTTPS=%s",
+                    result.pppoe_ok,
+                    result.ipv4_ok,
+                    result.gateway_ok,
+                    result.dns_ok,
+                    result.https_ok,
+                )
+            else:
+                self.logger.warning(
+                    "Internet connectivity probe failed, but the PPPoE "
+                    "session is still healthy. Skipping disruptive recovery. "
+                    "DNS=%s HTTPS=%s",
+                    result.dns_ok,
+                    result.https_ok,
+                )
         else:
             self.state = ConnectionState.DEGRADED
 
             self.logger.warning(
-                "Network health check failed. "
+                "PPPoE session health check failed. "
                 "PPPoE=%s IPv4=%s Gateway=%s DNS=%s HTTPS=%s",
                 result.pppoe_ok,
                 result.ipv4_ok,
