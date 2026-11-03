@@ -207,15 +207,33 @@ def test_run_cycle_checks_health_when_connected():
     manager.recover.assert_not_called()
 
 
-def test_run_cycle_recovers_when_health_check_fails():
-    """A failed health check should trigger recovery."""
+def test_run_cycle_keeps_session_when_internet_probe_fails():
+    """A failed Internet probe must not disconnect an active PPPoE session."""
 
     service, manager = create_service()
 
     manager.state = ConnectionState.CONNECTED
-
     manager.health_check.return_value = unhealthy_result()
 
+    service._run_cycle()
+
+    manager.health_check.assert_called_once()
+    manager.recover.assert_not_called()
+
+
+def test_run_cycle_recovers_when_local_network_is_unavailable():
+    """A missing PPPoE session or local network should trigger recovery."""
+
+    service, manager = create_service()
+
+    manager.state = ConnectionState.CONNECTED
+    manager.health_check.return_value = NetworkHealthResult(
+        pppoe_ok=False,
+        ipv4_ok=False,
+        gateway_ok=False,
+        dns_ok=False,
+        https_ok=False,
+    )
     manager.recover.return_value = RasdialResult(
         success=True,
         output="Recovered.",
