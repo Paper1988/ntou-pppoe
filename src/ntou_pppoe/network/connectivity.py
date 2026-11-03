@@ -30,15 +30,14 @@ class NetworkHealthResult:
     https_ok: bool
 
     @property
+    def session_healthy(self) -> bool:
+        """Return whether the PPPoE session and local network configuration are intact."""
+        return self.pppoe_ok and self.ipv4_ok and self.gateway_ok
+
+    @property
     def healthy(self) -> bool:
-        """Return whether all network health checks passed."""
-        return (
-            self.pppoe_ok
-            and self.ipv4_ok
-            and self.gateway_ok
-            and self.dns_ok
-            and self.https_ok
-        )
+        """Return whether both the PPPoE session and Internet probes are healthy."""
+        return self.session_healthy and self.dns_ok and self.https_ok
 
 
 class ConnectivityChecker:
