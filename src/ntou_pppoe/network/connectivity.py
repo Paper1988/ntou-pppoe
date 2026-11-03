@@ -40,6 +40,15 @@ class NetworkHealthResult:
             and self.https_ok
         )
 
+    @property
+    def requires_recovery(self) -> bool:
+        """Return whether the PPPoE session or local network is unavailable.
+
+        DNS and HTTPS probes test end-to-end Internet reachability. Their
+        temporary failure alone must not trigger a disruptive PPPoE reconnect.
+        """
+        return not (self.pppoe_ok and self.ipv4_ok and self.gateway_ok)
+
 
 class ConnectivityChecker:
     """Perform basic Internet connectivity checks."""
