@@ -113,6 +113,22 @@ class ConnectionService:
         if health.healthy:
             return
 
+        if not health.requires_recovery:
+            self.manager.logger.warning(
+                "Internet connectivity probe failed, but the PPPoE session "
+                "and local network are still available. Keeping the current "
+                "connection and retrying the health check on the next cycle. "
+                "DNS=%s HTTPS=%s",
+                health.dns_ok,
+                health.https_ok,
+            )
+            return
+
+        self.manager.logger.warning(
+            "PPPoE session or local network is unavailable. "
+            "Starting connection recovery."
+        )
+
         result = self.manager.recover()
 
         if result.success:
