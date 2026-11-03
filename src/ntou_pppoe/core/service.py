@@ -12,6 +12,7 @@ class ConnectionService:
     def __init__(self, manager: ConnectionManager):
         self.manager = manager
         self.running = False
+        self._consecutive_transport_failures = 0
 
     def start(self) -> None:
         """Start the connection monitoring loop."""
@@ -111,7 +112,43 @@ class ConnectionService:
         health = self.manager.health_check()
 
         if health.healthy:
+            self._consecutive_transport_failures = 0
             return
+
+        # DNS/HTTPS probes test Internet reachability, not the PPPoE
+        # session itself. Never tear down a working session just because
+        # a probe temporarily failed.
+        transport_healthy = (
+            health.pppoe_ok
+            and health.ipv4_ok
+            and health.gateway_ok
+        )
+
+        if transport_healthy:
+            self._consecutive_transport_failures = 0
+            self.manager.logger.warning(
+                "Internet connectivity probe failed, but the PPPoE "
+                "session, IPv4 address, and default gateway are present. "
+                "Keeping the current session and retrying on the next check."
+            )
+            return
+
+        self._consecutive_transport_failures += 1
+
+        if self._consecutive_transport_failures < 2:
+            self.manager.logger.warning(
+                "Underlying PPPoE connectivity is degraded "
+                "(confirmation %d/2). Keeping the current session "
+                "for another health check before recovery.",
+                self._consecutive_transport_failures,
+            )
+            return
+
+        self._consecutive_transport_failures = 0
+        self.manager.logger.warning(
+            "Underlying PPPoE connectivity failed in consecutive checks. "
+            "Starting recovery."
+        )
 
         result = self.manager.recover()
 
