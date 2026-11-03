@@ -163,8 +163,8 @@ def test_health_check_marks_connection_healthy():
     assert manager.retry.attempt == 0
 
 
-def test_health_check_marks_connection_degraded_when_unhealthy():
-    """An unhealthy connection should become DEGRADED."""
+def test_health_check_keeps_session_connected_when_https_probe_fails():
+    """A failed Internet probe should not mark an intact PPPoE session degraded."""
 
     manager = create_manager(
         health_check_enabled=True,
@@ -186,12 +186,13 @@ def test_health_check_marks_connection_degraded_when_unhealthy():
     result = manager.health_check()
 
     assert result.healthy is False
+    assert result.session_healthy is True
     assert result.pppoe_ok is True
     assert result.ipv4_ok is True
     assert result.gateway_ok is True
     assert result.dns_ok is True
     assert result.https_ok is False
-    assert manager.state == ConnectionState.DEGRADED
+    assert manager.state == ConnectionState.CONNECTED
 
 
 def test_health_check_marks_degraded_when_pppoe_is_disconnected():
