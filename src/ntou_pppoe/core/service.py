@@ -110,7 +110,7 @@ class ConnectionService:
 
         health = self.manager.health_check()
 
-        if health.healthy:
+        if health.session_healthy:
             return
 
         result = self.manager.recover()
